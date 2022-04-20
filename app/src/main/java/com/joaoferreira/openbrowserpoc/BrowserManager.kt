@@ -78,6 +78,7 @@ import androidx.browser.customtabs.CustomTabsSession
  * //pending intent. If shouldTint is set to true, android automatically picks a
  * //contrasting color with the toolbar background color defined in
  * //CustomTabColorSchemeParams and the drawable color will be ignored.
+ * //IMPORTANT: If the description is empty, the icon WILL NOT SHOW UP!
  * .setActionButton(
  *      resources.getDrawable(R.drawable.custom_back, resources.newTheme())!!.apply {
  *          setTint(Color(0xFFFF0000).hashCode())
@@ -126,12 +127,13 @@ import androidx.browser.customtabs.CustomTabsSession
  * }
  * ```
  * */
-class InAppBrowserManager(
+class BrowserManager(
     private val context: Context,
     private val websitesToPreload: List<Uri> = listOf(),
-    private val customTabsIntentBuilder: CustomTabsIntent.Builder = CustomTabsIntent.Builder(),
+    customTabsIntentBuilder: CustomTabsIntent.Builder.() -> Unit = {},
     private val customTabsCallback: CustomTabsCallback? = null,
 ) {
+    private val customTabsIntentBuilder = CustomTabsIntent.Builder().apply(customTabsIntentBuilder)
     private var canOpenCustomTab: Boolean = false
 
     private var customTabsClient: CustomTabsClient? = null
@@ -189,6 +191,7 @@ class InAppBrowserManager(
      * @param otherCustomTabsIntentBuilder The builder to give the In-app browser custom
      * behaviors. It overrides the default [customTabsIntentBuilder] from the constructor. See the
      * sample below to get more info.
+     * @param headers overrides the class default headers
      * @param onNoCustomTabsSupported The behavior when the device doesn't have a browser that
      * supports In-app browser. The default behavior is to open a browser outside the app, but it
      * can be replaced by implementing this callback.
@@ -241,6 +244,7 @@ class InAppBrowserManager(
      * //pending intent. If shouldTint is set to true, android automatically picks a
      * //contrasting color with the toolbar background color defined in
      * //CustomTabColorSchemeParams and the drawable color will be ignored.
+     * //IMPORTANT: If the description is empty, the icon WILL NOT SHOW UP!
      * .setActionButton(
      *      resources.getDrawable(R.drawable.custom_back, resources.newTheme())!!.apply {
      *          setTint(Color(0xFFFF0000).hashCode())
@@ -291,11 +295,13 @@ class InAppBrowserManager(
      */
     fun openBrowser(
         uri: Uri,
-        otherCustomTabsIntentBuilder: CustomTabsIntent.Builder? = null,
+        headers: List<Pair<String, String>>? = null,
+        otherCustomTabsIntentBuilder: (CustomTabsIntent.Builder.() -> Unit)? = null,
         onNoCustomTabsSupported: (uri: Uri) -> Unit = {
             //If the device doesn't have compatible browsers for custom tabs, just open it normally
             val browserIntent = Intent(Intent.ACTION_VIEW, uri)
-            headers?.let {
+
+            (headers ?: this.headers)?.let {
                 val headersBundle = Bundle()
                 it.forEach { header ->
                     headersBundle.putString(header.first, header.second)
@@ -306,7 +312,8 @@ class InAppBrowserManager(
         },
     ) {
         if (canOpenCustomTab) {
-            (otherCustomTabsIntentBuilder ?: customTabsIntentBuilder)
+            (otherCustomTabsIntentBuilder?.let { CustomTabsIntent.Builder().apply(it) }
+                ?: customTabsIntentBuilder)
                 .apply {
                     customTabsSession?.let {
                         setSession(it)
@@ -354,7 +361,7 @@ class InAppBrowserManager(
      * checks for low-end devices or bad internet connection as a criteria to preload them or not.
      * */
     private fun preloadWebsites(websitesToPreload: List<Uri>) {
-        if(canOpenCustomTab) {
+        if (canOpenCustomTab) {
             customTabsSession?.let {
                 //Tell the browser that these URIs might open, so it pre-loads them to open faster
                 //It is also smart, it won't preload on low end devices or with bad internet connection

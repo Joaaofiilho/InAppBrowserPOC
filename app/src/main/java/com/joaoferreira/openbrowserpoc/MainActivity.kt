@@ -50,12 +50,13 @@ class MainActivity : ComponentActivity() {
             val googleUri = remember { Uri.parse("https://www.google.com/") }
             val bingUri = remember { Uri.parse("https://www.bing.com/") }
             val context = LocalContext.current
-            val inAppBrowserManager = remember {
-                InAppBrowserManager(
+            val browserManager = remember {
+                BrowserManager(
                     context,
-                    customTabsIntentBuilder = CustomTabsIntent.Builder()
-                        .setColorScheme(CustomTabsIntent.COLOR_SCHEME_DARK)
-                        .setUrlBarHidingEnabled(true),
+                    customTabsIntentBuilder = {
+                        setColorScheme(CustomTabsIntent.COLOR_SCHEME_DARK)
+                        setUrlBarHidingEnabled(true)
+                    },
                     websitesToPreload = listOf(
                         googleUri,
                         bingUri,
@@ -76,45 +77,45 @@ class MainActivity : ComponentActivity() {
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             MyIconButton(Icons.Default.ExitToApp, "Default browser") {
-                                inAppBrowserManager.openBrowser(googleUri)
+                                browserManager.openBrowser(googleUri)
                             }
                             MyIconButton(Icons.Default.ExitToApp, "Light browser") {
-                                inAppBrowserManager.openBrowser(
+                                browserManager.openBrowser(
                                     googleUri,
-                                    otherCustomTabsIntentBuilder =
-                                    CustomTabsIntent.Builder()
-                                        .setColorScheme(CustomTabsIntent.COLOR_SCHEME_LIGHT)
+                                    otherCustomTabsIntentBuilder = {
+                                        setColorScheme(CustomTabsIntent.COLOR_SCHEME_LIGHT)
+                                    }
                                 )
                             }
                             MyIconButton(Icons.Default.ExitToApp, "Browser with custom colors and action button") {
-                                inAppBrowserManager.openBrowser(
+                                browserManager.openBrowser(
                                     googleUri,
-                                    otherCustomTabsIntentBuilder =
-                                        CustomTabsIntent.Builder()
-                                            .setDefaultColorSchemeParams(
-                                                CustomTabColorSchemeParams.Builder()
-                                                    .setToolbarColor(Color(0xFF7141d1).hashCode())
-                                                    .build()
-                                            )
-                                            .setActionButton(
-                                                resources.getDrawable(android.R.drawable.ic_input_get, resources.newTheme())!!.toBitmap(),
-                                                "An action button",
-                                                PendingIntent.getActivity(this@MainActivity, 100, Intent(), PendingIntent.FLAG_IMMUTABLE),
-                                                true,
-                                            )
+                                    otherCustomTabsIntentBuilder = {
+                                        setDefaultColorSchemeParams(
+                                            CustomTabColorSchemeParams.Builder()
+                                                .setToolbarColor(Color(0xFF7141d1).hashCode())
+                                                .build()
+                                        )
+                                        setActionButton(
+                                            resources.getDrawable(android.R.drawable.ic_input_get, resources.newTheme())!!.toBitmap(),
+                                            "An action button",
+                                            PendingIntent.getActivity(this@MainActivity, 100, Intent(), PendingIntent.FLAG_IMMUTABLE),
+                                            true,
+                                        )
+                                    }
                                 )
                             }
                             MyIconButton(Icons.Default.ExitToApp, "Browser with no hiding toolbar when scroll") {
-                                inAppBrowserManager.openBrowser(
+                                browserManager.openBrowser(
                                     googleUri,
-                                    otherCustomTabsIntentBuilder =
-                                    CustomTabsIntent.Builder()
-                                        .setUrlBarHidingEnabled(false)
+                                    otherCustomTabsIntentBuilder = {
+                                        setUrlBarHidingEnabled(false)
+                                    }
                                 )
                             }
                             Divider(Modifier.padding(vertical = 8.dp, horizontal = 4.dp), thickness = 2.dp)
                             Button(onClick = {
-                                inAppBrowserManager.updateWebsitesToPreload(listOf(bingUri))
+                                browserManager.updateWebsitesToPreload(listOf(bingUri))
                             }) {
                                 Text("Preload some other websites")
                             }
